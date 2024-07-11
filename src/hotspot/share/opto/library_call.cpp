@@ -6855,10 +6855,6 @@ bool LibraryCallKit::inline_reference_clear0() {
                                   T_OBJECT,
                                   decorators);
 
-  // Add memory barrier to prevent commoning reads from this field
-  // across safepoint since GC can change its value.
-  insert_mem_bar(Op_MemBarCPUOrder);
-
   IdealKit ideal(this);
 #define __ ideal.
   __ if_then(referent, BoolTest::ne, null());
@@ -6874,6 +6870,10 @@ bool LibraryCallKit::inline_reference_clear0() {
   __ end_if();
   final_sync(ideal);
 #undef __
+
+  // Add memory barrier to prevent commoning the accesses in this code,
+  // since GC can change the value of referent at any time.
+  insert_mem_bar(Op_MemBarCPUOrder);
 
   return true;
 }
